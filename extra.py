@@ -72,36 +72,15 @@ def get_all_orders():
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
-# Add a new route to insert an order recently created
 @app.route('/insertOrder', methods=['POST'])
 def insert_order():
-    try:
-        request_payload = request.get_json()
-        print("Order payload received:", request_payload)
-        
-        # Validate required fields
-        if not request_payload.get('customer_name'):
-            return jsonify({'error': 'Customer name is required'}), 400
-            
-        if not request_payload.get('grand_total'):
-            return jsonify({'error': 'Grand total is required'}), 400
-            
-        if not request_payload.get('order_items'):
-            return jsonify({'error': 'Order items are required'}), 400
-            
-        if not isinstance(request_payload['order_items'], list) or len(request_payload['order_items']) == 0:
-            return jsonify({'error': 'Order must contain at least one item'}), 400
-
-        order_id = orders_dao.insert_order(connection, request_payload)
-        response = jsonify({'order_id': order_id})
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        return response
-
-    except Exception as e:
-        print(f"Error processing order: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-
+    request_payload = json.loads(request.form['data'])
+    order_id = orders_dao.insert_order(connection, request_payload)
+    response = jsonify({
+        'order_id': order_id
+    })
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
 
 @app.route('/deleteProduct', methods=['POST'])
 def delete_product():

@@ -41,44 +41,57 @@ $(document).on("change", ".product-qty", function (e){
     calculateValue();
 });
 
-$("#saveOrder").on("click", function(){
-    var formData = $("form").serializeArray();
-    var requestPayload = {
-        customer_name: null,
-        total: null,
-        order_details: []
-    };
-    var orderDetails = [];
-    for(var i=0;i<formData.length;++i) {
-        var element = formData[i];
-        var lastElement = null;
-
-        switch(element.name) {
-            case 'customerName':
-                requestPayload.customer_name = element.value;
-                break;
-            case 'product_grand_total':
-                requestPayload.grand_total = element.value;
-                break;
-            case 'product':
-                requestPayload.order_details.push({
-                    product_id: element.value,
-                    quantity: null,
-                    total: null
-                });                
-                break;
-            case 'qty':
-                lastElement = requestPayload.order_details[requestPayload.order_details.length-1];
-                lastElement.quantity = element.value
-                break;
-            case 'item_total':
-                lastElement = requestPayload.order_details[requestPayload.order_details.length-1];
-                lastElement.total = element.value
-                break;
-        }
-//note change line 76 and 67
+$("#saveOrder").on("click", function() {
+    // Validate customer name
+    var customerName = $("#customerName").val().trim();
+    if (!customerName) {
+        alert("Please enter customer name");
+        return;
     }
-    callApi("POST", orderSaveApiUrl, {
-        'data': JSON.stringify(requestPayload)
+
+    // Build order items
+    var orderItems = [];
+    $(".product-item").each(function() {
+        var productId = $(this).find(".cart-product").val();
+        var quantity = parseInt($(this).find(".product-qty").val());
+        var totalPrice = parseFloat($(this).find("#item_total").val());
+        
+        if (productId && quantity > 0) {
+            orderItems.push({
+                product_id: parseInt(productId),  // Ensure integer
+                quantity: quantity,
+                total_price: totalPrice
+            });
+        }
+    });
+
+    // Validate order items
+    if (orderItems.length === 0) {
+        alert("Please add at least one product");
+        return;
+    }
+
+    var formData = {
+        customer_name: customerName,
+        grand_total: parseFloat($("#product_grand_total").val()),
+        order_items: orderItems
+    };
+
+    console.log("Sending order data:", formData);
+
+    $.ajax({
+        url: orderSaveApiUrl,
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(formData),
+        success: function(response) {
+            console.log("Order saved:", response);
+            alert("Order saved successfully!");
+            window.location.href = '/';
+        },
+        error: function(xhr, status, error) {
+            console.error("Server response:", xhr.responseText);
+            alert("Error saving order. Please try again.");
+        }
     });
 });
