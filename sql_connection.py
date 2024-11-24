@@ -10,7 +10,10 @@ def get_sql_connection():
 
     
     if __cnx is None:
-        __cnx = mysql.connector.connect(user='root', password='narc2004',
-                                database='grocerystore')
+        __cnx = mysql.connector.connect(
+            host='127.0.0.1',
+            user='root',
+            password='narc2004',
+            database='grocerystore'
+        )
     return __cnx
-

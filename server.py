@@ -1,25 +1,64 @@
-from flask import Flask, request, jsonify, render_template
-from sql_connection import get_sql_connection
-import json
+from flask import Flask, request, jsonify, render_template, redirect, url_for, session
 from werkzeug.exceptions import RequestEntityTooLarge
+from sql_connection import get_sql_connection
+import bcrypt
 
 import products_dao
 import orders_dao
 import uom_dao
 
 app = Flask(__name__)
+app.secret_key = 'your_secret_key'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 connection = get_sql_connection()
 
 
 @app.route('/')
+def welcome():
+    return render_template('welcome.html')
+
+@app.route('/index')
 def index():
-    return render_template('index.html')
+    if 'employee_id' in session:
+        return render_template('index.html')
+    else:
+        return redirect(url_for('employee_login'))
 
 @app.route('/new-order')
 def newOrder():
     return render_template('order.html')
+
+@app.route('/employee-login', methods=['GET', 'POST'])
+def employee_login():
+    if request.method == 'POST':
+        employee_id = request.form['employeeId']
+        password = request.form['password']
+        
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM employees WHERE employee_id = %s", (employee_id,))
+        employee = cursor.fetchone()
+        
+        if employee:
+            try:
+                # Try to verify with bcrypt
+                if bcrypt.checkpw(password.encode('utf-8'), employee['password'].encode('utf-8')):
+                    session['employee_id'] = employee['employee_id']
+                    return redirect(url_for('index'))
+            except ValueError:
+                # If password is not hashed, check plain text (temporary)
+                if password == employee['password']:
+                    # Hash the password and update it
+                    hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+                    cursor.execute("UPDATE employees SET password = %s WHERE employee_id = %s", 
+                                 (hashed.decode('utf-8'), employee['employee_id']))
+                    connection.commit()
+                    session['employee_id'] = employee['employee_id']
+                    return redirect(url_for('index'))
+                    
+        return render_template('login.html', error='Invalid employee ID or password')
+    
+    return render_template('login.html')
 
 @app.route('/manage-products')
 def manageProducts():
