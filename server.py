@@ -72,7 +72,7 @@ def get_all_orders():
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
-# Add a new route to insert an order recently created
+# In server.py
 @app.route('/insertOrder', methods=['POST'])
 def insert_order():
     try:
