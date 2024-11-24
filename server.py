@@ -67,8 +67,10 @@ def insert_product():
 
 @app.route('/getAllOrders', methods=['GET'])
 def get_all_orders():
-    response = orders_dao.get_all_orders(connection)
-    response = jsonify(response)
+    orders = orders_dao.get_all_orders(connection)
+    for order in orders:
+        order['datetime'] = order['datetime'].isoformat()  # Ensure datetime is in ISO 8601 format
+    response = jsonify(orders)
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
