@@ -5,6 +5,7 @@ import bcrypt
 import os
 from datetime import timedelta
 
+from employees import register_employee
 import products_dao
 import orders_dao
 import uom_dao
@@ -40,6 +41,31 @@ def index():
         return render_template('index.html')
     else:
         return redirect(url_for('employee_login'))
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'GET':
+        return render_template('register.html')
+        
+    if request.method == 'POST':
+        # Get form data
+        employee_data = {
+            'employee_id': request.form['employee_id'],
+            'employees_name': request.form['employees_name'],
+            'password': request.form['password']
+        }
+        
+        # Validate data
+        if not all(employee_data.values()):
+            return render_template('register.html', error='All fields are required')
+            
+        # Register employee
+        success, message = register_employee(employee_data)
+        
+        if success:
+            return redirect(url_for('employee_login'))
+        else:
+            return render_template('register.html', error=message)
 
 @app.route('/new-order')
 def newOrder():
