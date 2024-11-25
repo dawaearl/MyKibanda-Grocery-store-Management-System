@@ -88,8 +88,10 @@ def employee_login():
             
             if employee and bcrypt.checkpw(password.encode('utf-8'), employee['password'].encode('utf-8')):
                 session['employee_id'] = employee['employee_id']
-                return redirect(url_for('index'))
+                print("Login successful, redirecting to index")
+                return redirect(url_for('index'))  # Ensure redirect on successful login
             
+            print("Invalid credentials")
             return render_template('login.html', error='Invalid credentials')
         finally:
             if cursor:
