@@ -1,10 +1,8 @@
 from datetime import datetime
 from sql_connection import get_sql_connection
 
-def insert_order(connection, order):
+def insert_order(cursor, order):
     try:
-        cursor = connection.cursor()
-        
         # Insert main order
         order_query = ("INSERT INTO orders "
                       "(customer_name, total, datetime) "
@@ -27,12 +25,10 @@ def insert_order(connection, order):
             
             cursor.executemany(order_details_query, order_details_data)
         
-        connection.commit()
         return order_id
         
     except Exception as e:
-        print(f"Database error: {str(e)}")
-        connection.rollback()
+        print(f"Database error in insert_order: {str(e)}")
         raise
 
 def get_order_details(connection, order_id):
@@ -62,27 +58,21 @@ def get_order_details(connection, order_id):
 
     return records
 
-def get_all_orders(connection):
-    cursor = connection.cursor()
-    query = ("SELECT * FROM orders")
-    cursor.execute(query)
-    response = []
-    for (order_id, customer_name, total, dt) in cursor:
-        response.append({
-            'order_id': order_id,
-            'customer_name': customer_name,
-            'total': total,
-            'datetime': dt,
-        })
-
-    cursor.close()
-
-    # append order details in each order
-    for record in response:
-        record['order_details'] = get_order_details(connection, record['order_id'])
-
-    return response
+def get_all_orders(cursor):
+    try:
+        cursor.execute("""
+            SELECT o.order_id, 
+                   o.customer_name, 
+                   o.total, 
+                   o.datetime
+            FROM orders o
+            ORDER BY o.datetime DESC
+        """)
+        return cursor.fetchall()
+    except Exception as e:
+        print(f"Error fetching orders: {e}")
+        return []
 
 if __name__ == '__main__':
     connection = get_sql_connection()
-    print(get_all_orders(connection))
+    print(get_all_orders(connection.cursor()))

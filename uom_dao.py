@@ -1,17 +1,12 @@
 from datetime import datetime
 
-def get_uoms(connection):
-    cursor = connection.cursor()
-    query = ("SELECT * FROM grocerystore.uom")
-    cursor.execute(query)
-
-    response = []
-    for (uom_id, uom_name) in cursor:
-        response.append ({
-            'uom_id': uom_id,
-            'uom_name': uom_name
-        })
-    return response
+def get_uoms(cursor):
+    try:
+        cursor.execute("SELECT * FROM uom")
+        return cursor.fetchall()
+    except Exception as e:
+        print(f"Error fetching UOMs: {e}")
+        return []
 
 
 def insert_order(connection, order):
@@ -49,8 +44,25 @@ def insert_order(connection, order):
         raise
 
 
+def insert_product(cursor, product_data):
+    try:
+        cursor.execute("""
+            INSERT INTO products (name, uom_id, price_per_unit)
+            VALUES (%s, %s, %s)
+        """, (
+            product_data['name'],
+            product_data['uom_id'],
+            product_data['price_per_unit']
+        ))
+        return cursor.lastrowid
+    except Exception as e:
+        print(f"Error in insert_product: {e}")
+        raise
+
+
 if __name__ == '__main__':
     from sql_connection import get_sql_connection
 
     connection = get_sql_connection()
-    print(get_uoms(connection))
+    cursor = connection.cursor()
+    print(get_uoms(cursor))
